@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Escáner QR</title>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+        }
+        .container {
+            max-width: 100%;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        #reader {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .result-container {
+            margin-top: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        #result {
+            word-break: break-all;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Escáner QR</h1>
+        <div id="reader"></div>
+        <div class="result-container">
+            <h2>Resultado:</h2>
+            <div id="result">Esperando escaneo...</div>
+        </div>
+    </div>
+
+    <script>
+        function escaneoExitoso(textoDecodificado, resultadoDecodificado) {
+            // Detener el escáner
+            escanerQR.pausar();
+            
+            // Mostrar el resultado
+            document.getElementById('result').textContent = textoDecodificado;
+            
+            // Enviar el resultado al servidor
+            fetch('/api/scan', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ qrData: textoDecodificado })
+            })
+            .then(respuesta => respuesta.json())
+            .then(datos => {
+                console.log('Éxito:', datos);
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+
+            // Reanudar el escáner después de 3 segundos
+            setTimeout(() => {
+                escanerQR.reanudar();
+            }, 3000);
+        }
+
+        function errorEscaneo(error) {
+            console.warn(`Error de escaneo: ${error}`);
+        }
+
+        let escanerQR = new Html5QrcodeScanner(
+            "reader",
+            { 
+                fps: 10,
+                qrbox: { width: 250, height: 250 },
+                aspectRatio: 1.0
+            }
+        );
+        escanerQR.render(escaneoExitoso, errorEscaneo);
+    </script>
+</body>
+</html> 
